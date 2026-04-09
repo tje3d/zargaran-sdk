@@ -1,17 +1,23 @@
-# Moamelat API Client
+# zargaran-apiclient
 
 TypeScript client for the [Moamelat Trading Platform](https://api.moamelat.com) — a gold trading API supporting authentication, real-time trading, TP/SL management, accounting, and KYC.
 
 ## Installation
 
 ```bash
-bun install
+npm install zargaran-apiclient
+# or
+bun install zargaran-apiclient
+# or
+yarn add zargaran-apiclient
+# or
+pnpm add zargaran-apiclient
 ```
 
 ## Quick Start
 
 ```typescript
-import { MoamelatClient } from "./src/client";
+import { MoamelatClient, ApiError } from "zargaran-apiclient";
 
 const client = new MoamelatClient({
   baseUrl: "https://api.moamelat.com",
@@ -126,7 +132,7 @@ client.clearToken();             // Clear token (logout)
 All API errors throw an `ApiError` with detailed information:
 
 ```typescript
-import { MoamelatClient, ApiError } from "./src/client";
+import { MoamelatClient, ApiError } from "zargaran-apiclient";
 
 try {
   await client.openTrade("buy", 5);
