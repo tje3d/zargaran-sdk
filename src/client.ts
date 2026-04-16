@@ -367,6 +367,11 @@ export interface KycStatusResponse {
   status: KycStatus;
   level: string;
   isActive: boolean;
+  steps: {
+    step1: boolean;
+    step2: boolean;
+    step3: boolean;
+  };
 }
 
 interface KycStep1Data {
@@ -394,7 +399,7 @@ interface KycResponse {
 
 // --- Cards ---
 
-interface Card {
+export interface Card {
   id: number;
   bank: string;
   number: string;

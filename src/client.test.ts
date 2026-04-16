@@ -843,6 +843,7 @@ describe("MoamelatClient", () => {
           status: "pending",
           level: "در انتظار احراز هویت",
           isActive: false,
+          steps: { step1: false, step2: false, step3: false },
         },
       };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
