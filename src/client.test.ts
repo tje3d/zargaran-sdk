@@ -569,10 +569,24 @@ describe("MoamelatClient", () => {
       };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
-      await client.getTransactions(2, 50);
+      await client.getTransactions(2, "deposit");
 
       const [url] = fetchMock.mock.calls[0]!;
-      expect(url).toBe("https://api.test.com/accounting/transactions?page=2&limit=50");
+      expect(url).toBe("https://api.test.com/accounting/transactions?page=2&type=deposit");
+    });
+
+    it("getTransactions should use default page and omit type when not provided", async () => {
+      client.setToken("123:abc");
+      const mockData = {
+        success: true,
+        data: { transactions: [], total: 0, page: 1, limit: 20, totalPages: 0 },
+      };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      await client.getTransactions();
+
+      const [url] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("https://api.test.com/accounting/transactions?page=1");
     });
 
     it("getDepositConstraints should send GET request with auth", async () => {
@@ -601,7 +615,7 @@ describe("MoamelatClient", () => {
       await client.getWithdrawConstraints();
 
       const [url] = fetchMock.mock.calls[0]!;
-      expect(url).toBe("https://api.test.com/accounting/withdraw/constraints");
+      expect(url).toBe("https://api.test.com/accounting/withdraw/constraints?withdrawType=irt");
     });
 
     it("getWithdrawConstraints with cardNumber should include cardnumber query param", async () => {
@@ -615,7 +629,7 @@ describe("MoamelatClient", () => {
       await client.getWithdrawConstraints("6037991234567890");
 
       const [url] = fetchMock.mock.calls[0]!;
-      expect(url).toBe("https://api.test.com/accounting/withdraw/constraints?cardnumber=6037991234567890");
+      expect(url).toBe("https://api.test.com/accounting/withdraw/constraints?cardnumber=6037991234567890&withdrawType=irt");
     });
 
     it("getWithdrawConstraints with withdrawType should include withdrawType query param", async () => {
@@ -651,7 +665,7 @@ describe("MoamelatClient", () => {
       client.setToken("123:abc");
       const mockData = {
         success: true,
-        data: { paymentId: 1234, link: "https://gateway.example.com/pay/...", amount: 1000000, dollarSell: "980000", commission: 1.02, wage: 10000 },
+        data: { paymentId: 1234, link: "https://gateway.example.com/pay/...", amount: 1000000, dollarSell: 980000, commission: 1.02, wage: 10000 },
       };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
@@ -748,7 +762,7 @@ describe("MoamelatClient", () => {
       client.setToken("123:abc");
       const mockData = {
         success: true,
-        data: { settleId: 5678, dollarRate: "980000", usdtAmount: 1.02 },
+        data: { settleId: 5678, dollarRate: 980000, usdtAmount: 1.02 },
       };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
@@ -893,6 +907,29 @@ describe("MoamelatClient", () => {
       const [url, options] = fetchMock.mock.calls[0]!;
       expect(url).toBe("https://api.test.com/kyc/step3");
       expect(options.body).toBeInstanceOf(FormData);
+    });
+
+    it("should throw ApiError on KYC FormData non-OK response", async () => {
+      client.setToken("123:abc");
+      const errorResponse = {
+        success: false,
+        message: "KYC_UPLOAD_FAILED",
+        data: {},
+        errors: {},
+      };
+      fetchMock.mockReturnValueOnce(createMockResponse(errorResponse, 400, false));
+
+      const mockFile = new File(["test"], "selfie.png", { type: "image/png" });
+
+      await expect(client.submitKycStep3({ selfie: mockFile })).rejects.toThrow(ApiError);
+
+      try {
+        await client.submitKycStep3({ selfie: mockFile });
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).status).toBe(400);
+        expect((error as ApiError).code).toBe("KYC_UPLOAD_FAILED");
+      }
     });
   });
 
@@ -1049,6 +1086,29 @@ describe("MoamelatClient", () => {
       expect(result.success).toBe(true);
     });
 
+    it("should retry on network TypeError", async () => {
+      const retryClient = new MoamelatClient({
+        baseUrl: "https://api.test.com",
+        maxRetries: 1,
+        retryDelayMs: 10,
+      });
+
+      const successResponse = { success: true, data: { trades: [], total: 0, page: 1, limit: 20, totalPages: 0 } };
+
+      fetchMock
+        .mockImplementationOnce(() => {
+          throw new TypeError("fetch failed");
+        })
+        .mockReturnValueOnce(createMockResponse(successResponse, 200, true));
+
+      client.setToken("123:abc");
+
+      const result = await retryClient.getHistory();
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(result.success).toBe(true);
+    });
+
     it("should throw after max retries exhausted", async () => {
       const retryClient = new MoamelatClient({
         baseUrl: "https://api.test.com",
@@ -1125,6 +1185,16 @@ describe("MoamelatClient", () => {
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
       await client.getMargin();
+
+      const [, options] = fetchMock.mock.calls[0]!;
+      expect(options.headers["x-token"]).toBeUndefined();
+    });
+
+    it("should NOT send x-token header when token is null for other protected endpoints", async () => {
+      const mockData = { success: true, data: { trades: [] } };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      await client.getOpenTrades();
 
       const [, options] = fetchMock.mock.calls[0]!;
       expect(options.headers["x-token"]).toBeUndefined();

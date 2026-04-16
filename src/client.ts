@@ -282,7 +282,7 @@ interface IrtDepositResponse {
   paymentId: number;
   link: string;
   amount: number;
-  dollarSell: string;
+  dollarSell: number;
   commission: number;
   wage: number;
 }
@@ -303,7 +303,7 @@ interface PendingVerifyResponse {
 
 interface ManualDepositResponse {
   settleId: number;
-  dollarRate: string;
+  dollarRate: number;
   usdtAmount: number;
 }
 
@@ -334,7 +334,6 @@ interface DepositResponse {
 }
 
 interface WithdrawResponse {
-  success: boolean;
   reference?: string;
   settleId?: number;
   margin?: number;
@@ -587,18 +586,19 @@ export class MoamelatClient {
     return this.request<MarginResponse>('GET', '/accounting/margin', { auth: true });
   }
 
-  async getTransactions(page = 1, limit = 20): Promise<ApiResponse<TransactionsResponse>> {
-    return this.request<TransactionsResponse>('GET', `/accounting/transactions?page=${page}&limit=${limit}`, { auth: true });
+  async getTransactions(page = 1, type?: string): Promise<ApiResponse<TransactionsResponse>> {
+    const query = type ? `&type=${type}` : '';
+    return this.request<TransactionsResponse>('GET', `/accounting/transactions?page=${page}${query}`, { auth: true });
   }
 
   async getDepositConstraints(): Promise<ApiResponse<DepositConstraintsResponse>> {
     return this.request<DepositConstraintsResponse>('GET', '/accounting/deposit/constraints', { auth: true });
   }
 
-  async getWithdrawConstraints(cardNumber?: string, withdrawType?: WithdrawType): Promise<ApiResponse<WithdrawConstraintsResponse>> {
+  async getWithdrawConstraints(cardNumber?: string, withdrawType: WithdrawType = 'irt'): Promise<ApiResponse<WithdrawConstraintsResponse>> {
     const params = new URLSearchParams();
     if (cardNumber) params.set('cardnumber', cardNumber);
-    if (withdrawType) params.set('withdrawType', withdrawType);
+    params.set('withdrawType', withdrawType);
     const query = params.toString();
     return this.request<WithdrawConstraintsResponse>('GET', `/accounting/withdraw/constraints${query ? `?${query}` : ''}`, { auth: true });
   }

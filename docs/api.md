@@ -572,7 +572,7 @@ x-token: {token}
 
 #### 6.3 Get Transactions
 ```
-GET /accounting/transactions?page=1&limit=20
+GET /accounting/transactions?page=1&type=deposit
 x-token: {token}
 ```
 
@@ -603,7 +603,7 @@ x-token: {token}
 
 #### 6.5 Get Withdraw Constraints
 ```
-GET /accounting/withdraw/constraints?cardnumber={optional}&withdrawType={optional}
+GET /accounting/withdraw/constraints?cardnumber={optional}&withdrawType=irt
 x-token: {token}
 ```
 
