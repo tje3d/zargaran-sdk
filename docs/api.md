@@ -27,14 +27,9 @@ x-token: {trader_id}:{random_hash}
 
 ## TypeScript Client (`MoamelatClient`)
 
-### Installation
-```bash
-npm install zargaran-apiclient
-```
-
 ### Quick Start
 ```typescript
-import { MoamelatClient } from "zargaran-apiclient";
+import { MoamelatClient } from "./src/client";
 
 const client = new MoamelatClient({
   baseUrl: "https://api.moamelat.com",
@@ -80,7 +75,7 @@ By default, the client automatically persists the token, trader info, and cached
 
 You can provide a custom `StorageAdapter`:
 ```typescript
-import { MoamelatClient, StorageAdapter } from "zargaran-apiclient";
+import { MoamelatClient, StorageAdapter } from "./src/client";
 
 const myStorage: StorageAdapter = {
   getItem: (key) => /* ... */,

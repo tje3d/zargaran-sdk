@@ -1,60 +1,12 @@
 {
-  "name": "zargaran-apiclient",
-  "version": "1.1.1",
+  "name": "zargaran-sdk",
   "description": "TypeScript client for the Moamelat Trading Platform — supporting authentication, real-time trading, TP/SL management, accounting, and KYC.",
-  "main": "./dist/client.cjs",
-  "module": "./dist/client.js",
-  "types": "./dist/client.d.ts",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/client.d.ts",
-        "default": "./dist/client.js"
-      },
-      "require": {
-        "types": "./dist/client.d.ts",
-        "default": "./dist/client.cjs"
-      }
-    }
-  },
-  "files": [
-    "dist"
-  ],
   "type": "module",
-  "keywords": [
-    "moamelat",
-    "trading",
-    "api",
-    "client",
-    "gold",
-    "crypto",
-    "tpsl",
-    "kyc"
-  ],
-  "author": "",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/tje3d/zargaran-apiclient.git"
-  },
-  "homepage": "https://github.com/tje3d/zargaran-apiclient#readme",
-  "bugs": {
-    "url": "https://github.com/tje3d/zargaran-apiclient/issues"
-  },
   "scripts": {
-    "build": "tsup src/client.ts --format cjs,esm --dts --out-dir dist",
-    "test": "bun test",
-    "prepublishOnly": "npm run build"
+    "test": "bun test"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "tsup": "^8.3.5",
     "typescript": "^5"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }
