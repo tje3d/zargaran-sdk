@@ -66,6 +66,77 @@ describe("MoamelatClient", () => {
     });
   });
 
+  // ==================== Client Info Management ====================
+
+  describe("client info management", () => {
+    it("should set and get clientIp", () => {
+      client.setClientIp("192.168.1.100");
+      expect(client.getClientIp()).toBe("192.168.1.100");
+    });
+
+    it("should set and get userAgent", () => {
+      client.setUserAgent("Mozilla/5.0 Custom");
+      expect(client.getUserAgent()).toBe("Mozilla/5.0 Custom");
+    });
+
+    it("should accept clientIp and userAgent in constructor", () => {
+      const customClient = new MoamelatClient({
+        baseUrl: "https://api.test.com",
+        clientIp: "10.0.0.1",
+        userAgent: "TestAgent/1.0",
+        persistAuth: false,
+        autoRefreshProfile: false,
+      });
+      expect(customClient.getClientIp()).toBe("10.0.0.1");
+      expect(customClient.getUserAgent()).toBe("TestAgent/1.0");
+    });
+
+    it("should default clientIp and userAgent to null", () => {
+      expect(client.getClientIp()).toBeNull();
+      expect(client.getUserAgent()).toBeNull();
+    });
+
+    it("should send x-client-ip and x-client-user-agent headers on requests", async () => {
+      client.setToken("123:abc");
+      client.setClientIp("192.168.1.100");
+      client.setUserAgent("Mozilla/5.0");
+      const mockData = { success: true, data: { id: 123, tell: "09123456789", nickname: "john", margin: 1500.0, leverage: 3, commission: 0.5, obligation_status: "none", deposit_type: "irt", unique_code: "1234", sell_count: 45, buy_count: 32, sell_avg: 1850.5, buy_avg: 1845.25, call_margin_price: { sell: 1200.0, buy: 1100.0 } } };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      await client.getProfile();
+
+      const [, options] = fetchMock.mock.calls[0]!;
+      expect(options.headers["x-client-ip"]).toBe("192.168.1.100");
+      expect(options.headers["x-client-user-agent"]).toBe("Mozilla/5.0");
+    });
+
+    it("should send x-client-ip and x-client-user-agent headers on FormData requests", async () => {
+      client.setToken("123:abc");
+      client.setClientIp("192.168.1.100");
+      client.setUserAgent("Mozilla/5.0");
+      const mockData = { success: true, data: { success: true } };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      await client.submitKycStep3({ commitmentSelfi: new File(["test"], "selfie.png", { type: "image/png" }) });
+
+      const [, options] = fetchMock.mock.calls[0]!;
+      expect(options.headers["x-client-ip"]).toBe("192.168.1.100");
+      expect(options.headers["x-client-user-agent"]).toBe("Mozilla/5.0");
+    });
+
+    it("should omit client info headers when not set", async () => {
+      client.setToken("123:abc");
+      const mockData = { success: true, data: { id: 123, tell: "09123456789", nickname: "john", margin: 1500.0, leverage: 3, commission: 0.5, obligation_status: "none", deposit_type: "irt", unique_code: "1234", sell_count: 45, buy_count: 32, sell_avg: 1850.5, buy_avg: 1845.25, call_margin_price: { sell: 1200.0, buy: 1100.0 } } };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      await client.getProfile();
+
+      const [, options] = fetchMock.mock.calls[0]!;
+      expect(options.headers["x-client-ip"]).toBeUndefined();
+      expect(options.headers["x-client-user-agent"]).toBeUndefined();
+    });
+  });
+
   // ==================== Auth Methods ====================
 
   describe("auth methods", () => {

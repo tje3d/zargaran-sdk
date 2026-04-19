@@ -510,6 +510,8 @@ interface ClientOptions {
   profileRefreshIntervalMs?: number;
   storage?: StorageAdapter;
   storageKeyPrefix?: string;
+  clientIp?: string;
+  userAgent?: string;
 }
 
 const RETRYABLE_CODES = ['RATE_LIMITED', 'BOT_DISABLED'];
@@ -536,6 +538,10 @@ export class MoamelatClient {
   private storage: StorageAdapter | null;
   private storageKeyPrefix: string;
 
+  // Original client info (for server-side proxying)
+  private clientIp: string | null;
+  private userAgent: string | null;
+
   // Events
   private events = new Map<ClientEvent, Set<(payload: any) => void>>();
 
@@ -549,6 +555,8 @@ export class MoamelatClient {
     this.profileRefreshIntervalMs =
       options.profileRefreshIntervalMs ?? DEFAULT_PROFILE_REFRESH_INTERVAL_MS;
     this.storageKeyPrefix = options.storageKeyPrefix ?? DEFAULT_STORAGE_KEY_PREFIX;
+    this.clientIp = options.clientIp ?? null;
+    this.userAgent = options.userAgent ?? null;
 
     if (this.persistAuth) {
       this.storage = options.storage ?? createLocalStorageAdapter() ?? createMemoryStorageAdapter();
@@ -721,6 +729,24 @@ export class MoamelatClient {
       trader: this.trader,
       profile: this.cachedProfile,
     };
+  }
+
+  // --- Client Info Management ---
+
+  setClientIp(ip: string | null): void {
+    this.clientIp = ip;
+  }
+
+  getClientIp(): string | null {
+    return this.clientIp;
+  }
+
+  setUserAgent(userAgent: string | null): void {
+    this.userAgent = userAgent;
+  }
+
+  getUserAgent(): string | null {
+    return this.userAgent;
   }
 
   // --- Auth Methods ---
@@ -1074,6 +1100,14 @@ export class MoamelatClient {
           headers['x-token'] = this.token;
         }
 
+        if (this.clientIp) {
+          headers['x-client-ip'] = this.clientIp;
+        }
+
+        if (this.userAgent) {
+          headers['x-client-user-agent'] = this.userAgent;
+        }
+
         const url = `${this.baseUrl}${path}`;
         const response = await fetch(url, {
           method,
@@ -1140,6 +1174,14 @@ export class MoamelatClient {
     const headers: Record<string, string> = {};
     if (auth && this.token) {
       headers['x-token'] = this.token;
+    }
+
+    if (this.clientIp) {
+      headers['x-client-ip'] = this.clientIp;
+    }
+
+    if (this.userAgent) {
+      headers['x-client-user-agent'] = this.userAgent;
     }
 
     const url = `${this.baseUrl}${path}`;
