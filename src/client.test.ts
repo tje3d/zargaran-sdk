@@ -222,6 +222,7 @@ describe("MoamelatClient", () => {
               last_activity: 1712345678,
               created_at: 1712345678,
               is_active: 1,
+              is_current: true,
             },
           ],
         },

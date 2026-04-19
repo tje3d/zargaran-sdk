@@ -37,6 +37,7 @@ export interface Device {
   last_activity: number;
   created_at: number;
   is_active: number;
+  is_current: boolean;
 }
 
 interface DeviceListResponse {
