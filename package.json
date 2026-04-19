@@ -1,6 +1,17 @@
 {
   "name": "zargaran-sdk",
   "description": "TypeScript client for the Moamelat Trading Platform — supporting authentication, real-time trading, TP/SL management, accounting, and KYC.",
+  "main": "./src/client.ts",
+  "module": "./src/client.ts",
+  "types": "./src/client.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./src/client.ts",
+        "default": "./src/client.ts"
+      }
+    }
+  },
   "type": "module",
   "scripts": {
     "test": "bun test"
