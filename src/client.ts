@@ -242,14 +242,12 @@ export interface DepositConstraintsResponse {
 }
 
 export interface WithdrawConstraintsResponse {
-  minAmount: number;
-  maxAmount: number;
-  fee: number;
-  cards: Array<{
-    id: number;
-    bank: string;
-    number: string;
-  }>;
+  used: number;
+  limit: number;
+  remain: number;
+  countUsed: number;
+  countLimit: number;
+  countRemain: number;
 }
 
 // --- Accounting v2: Services Status ---

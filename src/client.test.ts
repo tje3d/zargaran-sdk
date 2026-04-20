@@ -674,7 +674,7 @@ describe("MoamelatClient", () => {
       client.setToken("123:abc");
       const mockData = {
         success: true,
-        data: { minAmount: 10, maxAmount: 1000, fee: 1, cards: [] },
+        data: { used: 0, limit: 100000000, remain: 100000000, countUsed: 0, countLimit: 3, countRemain: 3 },
       };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
@@ -688,7 +688,7 @@ describe("MoamelatClient", () => {
       client.setToken("123:abc");
       const mockData = {
         success: true,
-        data: { minAmount: 10, maxAmount: 1000, fee: 1, cards: [] },
+        data: { used: 0, limit: 100000000, remain: 100000000, countUsed: 0, countLimit: 3, countRemain: 3 },
       };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
@@ -702,7 +702,7 @@ describe("MoamelatClient", () => {
       client.setToken("123:abc");
       const mockData = {
         success: true,
-        data: { minAmount: 10, maxAmount: 1000, fee: 1, cards: [] },
+        data: { used: 0, limit: -1, remain: -1, countUsed: 0, countLimit: -1, countRemain: -1 },
       };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
@@ -716,7 +716,7 @@ describe("MoamelatClient", () => {
       client.setToken("123:abc");
       const mockData = {
         success: true,
-        data: { minAmount: 10, maxAmount: 1000, fee: 1, cards: [] },
+        data: { used: 5000000, limit: 50000000, remain: 45000000, countUsed: 2, countLimit: 5, countRemain: 3 },
       };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
