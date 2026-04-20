@@ -3,8 +3,7 @@
 type TradeType = 'buy' | 'sell';
 type CloseType = 'all' | 'buy' | 'sell' | 'profit' | 'loss';
 
-type KycStatus = 'none' | 'pending' | 'approved' | 'rejected';
-type PendingStatus = 'new' | 'step1' | 'step2' | 'step3';
+type KycStatus = string;
 type ObligationStatus = 'none' | string;
 type DepositType = 'irt' | string;
 type CardStatus = 'success' | 'pending' | 'rejected' | string;
@@ -368,6 +367,7 @@ export interface KycStatusResponse {
   status: KycStatus;
   level: string;
   isActive: boolean;
+  pendingLevel: 'step1' | 'step2' | 'step3' | null;
   steps: {
     step1: boolean;
     step2: boolean;

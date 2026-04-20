@@ -949,15 +949,25 @@ x-token: {token}
 {
   "success": true,
   "data": {
-    "status": "pending",    // none | pending | approved | rejected
+    "status": "step2_pending_review",
+    "level": "در انتظار بررسی احراز هویت سطح دوم",
+    "isActive": false,
+    "pendingLevel": "step2",
     "steps": {
       "step1": true,
-      "step2": true,
+      "step2": false,
       "step3": false
     }
   }
 }
 ```
+
+**Fields:**
+- `status` - Current KYC status string (e.g. `step1_pending_review`, `step2_pending_review`, `approved`, `rejected`)
+- `level` - Human-readable status description in Persian
+- `isActive` - `true` when KYC is fully completed and approved
+- `pendingLevel` - Which step is currently pending (`step1` | `step2` | `step3`); `null` means no KYC started yet
+- `steps` - Completion state of each individual step
 
 #### 7.2 Submit KYC Step 1 (Personal Info)
 ```

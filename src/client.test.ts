@@ -912,10 +912,11 @@ describe("MoamelatClient", () => {
         success: true,
         message: "ok",
         data: {
-          status: "pending",
-          level: "در انتظار احراز هویت",
+          status: "step2_pending_review",
+          level: "در انتظار بررسی احراز هویت سطح دوم",
           isActive: false,
-          steps: { step1: false, step2: false, step3: false },
+          pendingLevel: "step2",
+          steps: { step1: true, step2: false, step3: false },
         },
       };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
