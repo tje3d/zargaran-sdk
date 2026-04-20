@@ -15,7 +15,7 @@ type GatewayType = 'zibal' | string;
 
 // --- Auth ---
 
-interface LoginResponse {
+export interface LoginResponse {
   token: string;
   device_id?: string;
   trader: {
@@ -39,17 +39,17 @@ export interface Device {
   is_current: boolean;
 }
 
-interface DeviceListResponse {
+export interface DeviceListResponse {
   devices: Device[];
 }
 
-interface LogoutResponse {
+export interface LogoutResponse {
   message: string;
 }
 
 // --- Profile ---
 
-interface ProfileResponse {
+export interface ProfileResponse {
   id: number;
   tell: string;
   nickname: string;
@@ -75,7 +75,7 @@ interface ProfileResponse {
 
 // --- Trades ---
 
-interface OpenTrade {
+export interface OpenTrade {
   id: number;
   type: TradeType;
   amount: number;
@@ -84,7 +84,7 @@ interface OpenTrade {
   pnl: number;
 }
 
-interface OpenTradesResponse {
+export interface OpenTradesResponse {
   trades: OpenTrade[];
   totalPnl: number;
   buyCount: number;
@@ -95,7 +95,7 @@ interface OpenTradesResponse {
   currentSellPrice: number;
 }
 
-interface CapacityResponse {
+export interface CapacityResponse {
   rate: number;
   loss: number;
   freeMargin: number;
@@ -111,23 +111,23 @@ export interface ReferralResponse {
   link: string;
 }
 
-interface OpenTradeResponse {
+export interface OpenTradeResponse {
   success: boolean;
   result: {
     trade_id: number;
   };
 }
 
-interface CloseTradeResponse {
+export interface CloseTradeResponse {
   success: boolean;
 }
 
-interface CloseAllTradesResponse {
+export interface CloseAllTradesResponse {
   success: boolean;
   closed: number;
 }
 
-interface LeverageResponse {
+export interface LeverageResponse {
   success: boolean;
   newLeverage: number;
   callMarginSell: number;
@@ -136,16 +136,16 @@ interface LeverageResponse {
 
 // --- TP/SL ---
 
-interface TpslResponse {
+export interface TpslResponse {
   success: boolean;
   action: TpslAction;
 }
 
-interface CreateLimitOrderResponse {
+export interface CreateLimitOrderResponse {
   id: number;
 }
 
-interface OrderLoadResponse {
+export interface OrderLoadResponse {
   trader: {
     id: number;
     tell: string;
@@ -174,13 +174,13 @@ interface OrderLoadResponse {
   chartLink: string;
 }
 
-interface CancelPendingResponse {
+export interface CancelPendingResponse {
   success: boolean;
 }
 
 // --- History ---
 
-interface TradeHistoryItem {
+export interface TradeHistoryItem {
   id: number;
   type: TradeType;
   amount: number;
@@ -192,7 +192,7 @@ interface TradeHistoryItem {
   commission_amount: string;
 }
 
-interface TradeHistoryResponse {
+export interface TradeHistoryResponse {
   trades: TradeHistoryItem[];
   total: number;
   page: number;
@@ -200,7 +200,7 @@ interface TradeHistoryResponse {
   totalPages: number;
 }
 
-interface HistoryFilters {
+export interface HistoryFilters {
   page?: number;
   limit?: number;
   type?: TradeType;
@@ -375,7 +375,7 @@ export interface KycStatusResponse {
   };
 }
 
-interface KycStep1Data {
+export interface KycStep1Data {
   fullname: string;
   nid: string;
   mobile?: string;
@@ -384,16 +384,16 @@ interface KycStep1Data {
   day?: string;
 }
 
-interface KycStep2Data {
+export interface KycStep2Data {
   nidPic?: File | string;
   commitment?: File | string;
 }
 
-interface KycStep3Data {
+export interface KycStep3Data {
   commitmentSelfi?: File | string;
 }
 
-interface KycResponse {
+export interface KycResponse {
   success: boolean;
   message?: string;
 }
