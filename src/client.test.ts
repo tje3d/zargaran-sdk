@@ -25,7 +25,7 @@ describe("MoamelatClient", () => {
       autoRefreshProfile: false,
     });
     fetchMock = mock(createMockResponse);
-    globalThis.fetch = fetchMock;
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -165,9 +165,64 @@ describe("MoamelatClient", () => {
       expect(result).toEqual(mockData);
     });
 
+    it("signupVerify should send POST request and update auth on success", async () => {
+      const mockData = {
+        success: true,
+        data: {
+          token: "123:abc123def456",
+          device_id: "550e8400-e29b-41d4-a716-446655440000",
+          trader: {
+            id: 456,
+            tell: "09123456789",
+            fullname: "",
+            nickname: "",
+          },
+        },
+      };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      const result = await client.signupVerify("09123456789", "12345");
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, options] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("https://api.test.com/auth/signup/verify");
+      expect(options.method).toBe("POST");
+      expect(JSON.parse(options.body)).toEqual({ tell: "09123456789", code: "12345" });
+      expect(result).toEqual(mockData);
+      expect(client.getToken()).toBe("123:abc123def456");
+    });
+
+    it("sendCode should send POST request with body", async () => {
+      const mockData = { success: true, data: { mobile: "0912***6789", trader_id: 123 } };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      const result = await client.sendCode("09123456789", undefined, "signup");
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, options] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("https://api.test.com/auth/send-code");
+      expect(options.method).toBe("POST");
+      expect(JSON.parse(options.body)).toEqual({ tell: "09123456789", type: "signup" });
+      expect(result).toEqual(mockData);
+    });
+
+    it("setPassword should send POST request with body", async () => {
+      const mockData = { success: true, data: { message: "PASSWORD_SET" } };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      const result = await client.setPassword(123, "newpass123", "12345");
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, options] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("https://api.test.com/auth/set-password");
+      expect(options.method).toBe("POST");
+      expect(JSON.parse(options.body)).toEqual({ trader_id: 123, password: "newpass123", code: "12345" });
+      expect(result).toEqual(mockData);
+    });
+
     it("requestChangePassword should send POST request with auth", async () => {
       client.setToken("123:abc");
-      const mockData = { success: true, data: undefined };
+      const mockData = { success: true, data: { mobile: "0912***6789", trader_id: 123 } };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
       await client.requestChangePassword("newpass");
@@ -180,7 +235,7 @@ describe("MoamelatClient", () => {
 
     it("changePassword should send POST request with auth", async () => {
       client.setToken("123:abc");
-      const mockData = { success: true, data: undefined };
+      const mockData = { success: true, data: { message: "PASSWORD_CHANGED" } };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
       await client.changePassword("newpass", "54321");
@@ -241,7 +296,7 @@ describe("MoamelatClient", () => {
 
     it("deleteDevice should send POST request with auth", async () => {
       client.setToken("123:abc");
-      const mockData = { success: true, data: undefined };
+      const mockData = { success: true, data: { message: "DEVICE_DELETED" } };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
       await client.deleteDevice("550e8400-e29b-41d4-a716-446655440000");
@@ -255,7 +310,7 @@ describe("MoamelatClient", () => {
 
     it("deleteOtherDevices should send POST request with auth", async () => {
       client.setToken("123:abc");
-      const mockData = { success: true, data: undefined };
+      const mockData = { success: true, data: { message: "OTHER_DEVICES_DELETED", deleted_count: 3 } };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
       await client.deleteOtherDevices();
@@ -382,7 +437,10 @@ describe("MoamelatClient", () => {
 
     it("editNickname should send POST request with auth", async () => {
       client.setToken("123:abc");
-      const mockData = { success: true, data: undefined };
+      const mockData = {
+        success: true,
+        data: { success: true, message: "درخواست تغییر نام مستعار ثبت شد." },
+      };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
       await client.editNickname("new_nickname");
@@ -413,7 +471,7 @@ describe("MoamelatClient", () => {
 
     it("closeTrade should send POST request with auth", async () => {
       client.setToken("123:abc");
-      const mockData = { success: true, data: { success: true } };
+      const mockData = { success: true, data: {} };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
       await client.closeTrade(456);
@@ -426,7 +484,7 @@ describe("MoamelatClient", () => {
 
     it("closeAllTrades should send POST request with auth", async () => {
       client.setToken("123:abc");
-      const mockData = { success: true, data: { success: true, closed: 5 } };
+      const mockData = { success: true, data: {} };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
       await client.closeAllTrades("all");
@@ -503,9 +561,53 @@ describe("MoamelatClient", () => {
       expect(JSON.parse(options.body)).toEqual({ type: "sell", amount: 3, price: 1860 });
     });
 
+    it("getPendingOrders should send GET request with auth", async () => {
+      client.setToken("123:abc");
+      const mockData = {
+        success: true,
+        data: {
+          orders: [
+            {
+              id: 789,
+              trade_id: 456,
+              type: "buy" as const,
+              order_type: "tpsl",
+              number: 5,
+              price: 1850.0,
+              base_price: 1875.0,
+              tp: 1900.0,
+              sl: 1800.0,
+              status: "step1",
+              date: 1712345678,
+            },
+          ],
+        },
+      };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      const result = await client.getPendingOrders();
+
+      const [url, options] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("https://api.test.com/order/pending");
+      expect(options.headers["x-token"]).toBe("123:abc");
+      expect(options.method).toBe("GET");
+      expect(result).toEqual(mockData);
+    });
+
+    it("getPendingOrders with status should include query param", async () => {
+      client.setToken("123:abc");
+      const mockData = { success: true, data: { orders: [] } };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      await client.getPendingOrders("new,step1");
+
+      const [url] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("https://api.test.com/order/pending?status=new%2Cstep1");
+    });
+
     it("cancelPendingOrder should send POST request with auth", async () => {
       client.setToken("123:abc");
-      const mockData = { success: true, data: { success: true } };
+      const mockData = { success: true, data: {} };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
       await client.cancelPendingOrder(789);
@@ -560,8 +662,8 @@ describe("MoamelatClient", () => {
         success: true,
         data: {
           trader: { id: 123, tell: "09123456789", nickname: "john", margin: "1000.00", leverage: 1, open_trades: 2 },
-          trades: [{ id: 456, type: "buy", amount: 5, price: "1850.25", remain_amount: 5, time: 1712345678 }],
-          pendings: [{ id: 789, type: "buy", number: 3, price: 1840, status: "new" }],
+          trades: [{ id: 456, type: "buy" as const, amount: 5, price: "1850.25", remain_amount: 5, time: 1712345678 }],
+          pendings: [{ id: 789, type: "buy" as const, number: 3, price: 1840, status: "new" }],
           wsServerUrl: "wss://test",
           chartToken: "token123",
           chartLink: "https://chart.test",
@@ -915,7 +1017,7 @@ describe("MoamelatClient", () => {
           status: "step2_pending_review",
           level: "در انتظار بررسی احراز هویت سطح دوم",
           isActive: false,
-          pendingLevel: "step2",
+          pendingLevel: "step2" as const,
           steps: { step1: true, step2: false, step3: false },
         },
       };
@@ -931,10 +1033,10 @@ describe("MoamelatClient", () => {
 
     it("submitKycStep1 should send JSON POST request", async () => {
       client.setToken("123:abc");
-      const mockData = { success: true, data: { success: true } };
+      const mockData = { success: true, data: { success: true, nextLevel: "step1" } };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
-      await client.submitKycStep1({
+      const result = await client.submitKycStep1({
         fullname: "John Doe",
         nid: "0012345678",
         mobile: "09123456789",
@@ -956,6 +1058,7 @@ describe("MoamelatClient", () => {
         month: "01",
         day: "01",
       });
+      expect(result).toEqual(mockData);
     });
 
     it("submitKycStep2 should send FormData POST request with nidPic and commitment", async () => {
@@ -1040,23 +1143,21 @@ describe("MoamelatClient", () => {
       client.setToken("123:abc");
       const mockData = {
         success: true,
-        data: {
-          success: true,
-          card: { id: 1, bank: "Mellat", number: "603799****7890", shaba: "IR123...", status: "success" },
-        },
+        data: { id: 12, bank: "Mellat", number: "6037991234567890", shaba: "IR820540102680020817909002", status: "success" },
       };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
-      await client.addCard("6037991234567890");
+      const result = await client.addCard("6037991234567890");
 
       const [url, options] = fetchMock.mock.calls[0]!;
       expect(url).toBe("https://api.test.com/card/add");
       expect(JSON.parse(options.body)).toEqual({ cardnumber: "6037991234567890" });
+      expect(result).toEqual(mockData);
     });
 
     it("deleteCard should send POST request with auth", async () => {
       client.setToken("123:abc");
-      const mockData = { success: true, data: { success: true } };
+      const mockData = { success: true, data: { deleted: true } };
       fetchMock.mockReturnValueOnce(createMockResponse(mockData));
 
       await client.deleteCard(1);
@@ -1064,6 +1165,110 @@ describe("MoamelatClient", () => {
       const [url, options] = fetchMock.mock.calls[0]!;
       expect(url).toBe("https://api.test.com/card/delete");
       expect(JSON.parse(options.body)).toEqual({ id: 1 });
+    });
+  });
+
+  // ==================== AI Methods ====================
+
+  describe("AI methods", () => {
+    it("aiChat should send POST request with auth", async () => {
+      client.setToken("123:abc");
+      const mockData = {
+        success: true,
+        data: {
+          text: "مارجین فعلی شما **150.42 تتر** است.",
+          conversation_id: 42,
+        },
+      };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      const result = await client.aiChat("موجودی من چقدره؟", 42);
+
+      const [url, options] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("https://api.test.com/ai/chat");
+      expect(options.headers["x-token"]).toBe("123:abc");
+      expect(options.method).toBe("POST");
+      expect(JSON.parse(options.body)).toEqual({ message: "موجودی من چقدره؟", conversation_id: 42 });
+      expect(result).toEqual(mockData);
+    });
+
+    it("aiChat should omit conversation_id when not provided", async () => {
+      client.setToken("123:abc");
+      const mockData = {
+        success: true,
+        data: { text: "Hello!", conversation_id: 1 },
+      };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      await client.aiChat("Hello");
+
+      const [, options] = fetchMock.mock.calls[0]!;
+      expect(JSON.parse(options.body)).toEqual({ message: "Hello" });
+    });
+
+    it("listAiConversations should send GET request with auth", async () => {
+      client.setToken("123:abc");
+      const mockData = {
+        success: true,
+        data: {
+          conversations: [
+            { id: 1, channel: "api" as const, title: "Trade Help", created_at: 1712345678, last_activity: 1712345678 },
+          ],
+        },
+      };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      const result = await client.listAiConversations();
+
+      const [url, options] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("https://api.test.com/ai/conversations?limit=20");
+      expect(options.headers["x-token"]).toBe("123:abc");
+      expect(options.method).toBe("GET");
+      expect(result).toEqual(mockData);
+    });
+
+    it("listAiConversations should accept custom limit", async () => {
+      client.setToken("123:abc");
+      const mockData = { success: true, data: { conversations: [] } };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      await client.listAiConversations(50);
+
+      const [url] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("https://api.test.com/ai/conversations?limit=50");
+    });
+
+    it("getAiConversationMessages should send GET request with auth", async () => {
+      client.setToken("123:abc");
+      const mockData = {
+        success: true,
+        data: {
+          messages: [
+            { id: 1, role: "user" as const, content: "Hello", tool_name: null, tool_args: null, created_at: 1712345678 },
+            { id: 2, role: "assistant" as const, content: "Hi there", tool_name: null, tool_args: null, created_at: 1712345679 },
+          ],
+        },
+      };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      const result = await client.getAiConversationMessages(42);
+
+      const [url, options] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("https://api.test.com/ai/conversations/42/messages?limit=50");
+      expect(options.headers["x-token"]).toBe("123:abc");
+      expect(options.method).toBe("GET");
+      expect(result).toEqual(mockData);
+    });
+
+    it("getAiConversationMessages should accept custom limit", async () => {
+      client.setToken("123:abc");
+      const mockData = { success: true, data: { messages: [] } };
+      fetchMock.mockReturnValueOnce(createMockResponse(mockData));
+
+      await client.getAiConversationMessages(42, 100);
+
+      const [url] = fetchMock.mock.calls[0]!;
+      expect(url).toBe("https://api.test.com/ai/conversations/42/messages?limit=100");
     });
   });
 

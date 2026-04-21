@@ -26,6 +26,24 @@ export interface LoginResponse {
   };
 }
 
+export interface SendCodeResponse {
+  mobile?: string;
+  trader_id?: number;
+}
+
+export interface SetPasswordResponse {
+  message?: string;
+}
+
+export interface ChangePasswordRequestResponse {
+  mobile?: string;
+  trader_id?: number;
+}
+
+export interface ChangePasswordResponse {
+  message?: string;
+}
+
 export interface Device {
   id: number;
   device_id: string;
@@ -43,8 +61,17 @@ export interface DeviceListResponse {
   devices: Device[];
 }
 
+export interface DeleteDeviceResponse {
+  message?: string;
+}
+
+export interface DeleteOtherDevicesResponse {
+  message?: string;
+  deleted_count?: number;
+}
+
 export interface LogoutResponse {
-  message: string;
+  message?: string;
 }
 
 // --- Profile ---
@@ -54,6 +81,8 @@ export interface ProfileResponse {
   tell: string;
   nickname: string;
   fullname: string;
+  nid?: string;
+  birthdate?: string;
   margin: number;
   leverage: number;
   commission: number;
@@ -68,9 +97,6 @@ export interface ProfileResponse {
     sell: number;
     buy: number;
   };
-  call_margin_sell?: string;
-  call_margin_buy?: string;
-  wsServerUrl?: string;
 }
 
 // --- Trades ---
@@ -119,12 +145,11 @@ export interface OpenTradeResponse {
 }
 
 export interface CloseTradeResponse {
-  success: boolean;
+  // Empty response data
 }
 
 export interface CloseAllTradesResponse {
-  success: boolean;
-  closed: number;
+  // Empty response data
 }
 
 export interface LeverageResponse {
@@ -175,7 +200,7 @@ export interface OrderLoadResponse {
 }
 
 export interface CancelPendingResponse {
-  success: boolean;
+  // Empty response data
 }
 
 // --- History ---
@@ -391,6 +416,11 @@ export interface KycStep3Data {
   commitmentSelfi?: File | string;
 }
 
+export interface KycStep1Response {
+  success: boolean;
+  nextLevel?: string;
+}
+
 export interface KycResponse {
   success: boolean;
   message?: string;
@@ -410,13 +440,63 @@ interface CardListResponse {
   cards: Card[];
 }
 
-interface AddCardResponse {
-  success: boolean;
-  card?: Card;
+export interface PendingOrder {
+  id: number;
+  trade_id: number;
+  type: TradeType;
+  order_type: string;
+  number: number;
+  price: number;
+  base_price: number;
+  tp?: number;
+  sl?: number;
+  status: string;
+  date: number;
 }
 
+export interface GetPendingOrdersResponse {
+  orders: PendingOrder[];
+}
+
+export interface AiChatResponse {
+  text: string;
+  conversation_id: number;
+}
+
+export interface AiConversation {
+  id: number;
+  channel: 'telegram' | 'api';
+  title: string | null;
+  created_at: number;
+  last_activity: number;
+}
+
+export interface AiConversationsResponse {
+  conversations: AiConversation[];
+}
+
+export interface AiMessage {
+  id: number;
+  role: 'user' | 'assistant' | 'tool';
+  content: string | null;
+  tool_name: string | null;
+  tool_args: Record<string, unknown> | null;
+  created_at: number;
+}
+
+export interface AiMessagesResponse {
+  messages: AiMessage[];
+}
+
+interface AddCardResponse extends Card {}
+
 interface DeleteCardResponse {
-  success: boolean;
+  deleted?: boolean;
+}
+
+interface EditNicknameResponse {
+  success?: boolean;
+  message?: string;
 }
 
 // --- Generic API Response ---
@@ -770,15 +850,61 @@ export class MoamelatClient {
     return result;
   }
 
-  async requestChangePassword(newPassword: string): Promise<ApiResponse<void>> {
-    return this.request<void>('POST', '/auth/change-password/request', {
+  async signupVerify(tell: string, code: string): Promise<ApiResponse<LoginResponse>> {
+    const result = await this.request<LoginResponse>('POST', '/auth/signup/verify', {
+      body: { tell, code },
+    });
+    if (result.success && result.data) {
+      this.token = result.data.token;
+      this.trader = result.data.trader;
+      this._persistAuth();
+      this.emit('login', result.data);
+      this.emit('authChange', this.getAuthState());
+      if (this.autoRefreshProfile) {
+        await this._fetchAndCacheProfile().catch(() => {
+          // Ignore initial profile fetch errors
+        });
+        this.startProfileRefresh();
+      }
+    }
+    return result;
+  }
+
+  async sendCode(
+    tell: string,
+    chat_id?: string,
+    type?: 'set_password' | 'reset_password' | 'signup',
+  ): Promise<ApiResponse<SendCodeResponse>> {
+    const body: Record<string, unknown> = { tell };
+    if (chat_id) body.chat_id = chat_id;
+    if (type) body.type = type;
+    return this.request<SendCodeResponse>('POST', '/auth/send-code', { body });
+  }
+
+  async setPassword(
+    trader_id: number,
+    password: string,
+    code: string,
+  ): Promise<ApiResponse<SetPasswordResponse>> {
+    return this.request<SetPasswordResponse>('POST', '/auth/set-password', {
+      body: { trader_id, password, code },
+    });
+  }
+
+  async requestChangePassword(
+    newPassword: string,
+  ): Promise<ApiResponse<ChangePasswordRequestResponse>> {
+    return this.request<ChangePasswordRequestResponse>('POST', '/auth/change-password/request', {
       body: { new_password: newPassword },
       auth: true,
     });
   }
 
-  async changePassword(newPassword: string, code: string): Promise<ApiResponse<void>> {
-    return this.request<void>('POST', '/auth/change-password', {
+  async changePassword(
+    newPassword: string,
+    code: string,
+  ): Promise<ApiResponse<ChangePasswordResponse>> {
+    return this.request<ChangePasswordResponse>('POST', '/auth/change-password', {
       body: { new_password: newPassword, code },
       auth: true,
     });
@@ -800,15 +926,17 @@ export class MoamelatClient {
     return this.request<DeviceListResponse>('GET', '/auth/devices', { auth: true });
   }
 
-  async deleteDevice(deviceId: string): Promise<ApiResponse<void>> {
-    return this.request<void>('POST', '/auth/devices/delete', {
+  async deleteDevice(deviceId: string): Promise<ApiResponse<DeleteDeviceResponse>> {
+    return this.request<DeleteDeviceResponse>('POST', '/auth/devices/delete', {
       body: { device_id: deviceId },
       auth: true,
     });
   }
 
-  async deleteOtherDevices(): Promise<ApiResponse<void>> {
-    return this.request<void>('POST', '/auth/devices/delete-others', { auth: true });
+  async deleteOtherDevices(): Promise<ApiResponse<DeleteOtherDevicesResponse>> {
+    return this.request<DeleteOtherDevicesResponse>('POST', '/auth/devices/delete-others', {
+      auth: true,
+    });
   }
 
   // --- Profile Methods ---
@@ -830,8 +958,8 @@ export class MoamelatClient {
     return this.request<ReferralResponse>('GET', '/trader/referral', { auth: true });
   }
 
-  async editNickname(nickname: string): Promise<ApiResponse<void>> {
-    return this.request<void>('POST', '/trader/edit-nickname', {
+  async editNickname(nickname: string): Promise<ApiResponse<EditNicknameResponse>> {
+    return this.request<EditNicknameResponse>('POST', '/trader/edit-nickname', {
       body: { nickname },
       auth: true,
     });
@@ -887,6 +1015,13 @@ export class MoamelatClient {
     if (tp !== undefined) body.tp = tp;
     if (sl !== undefined) body.sl = sl;
     return this.request<CreateLimitOrderResponse>('POST', '/order/pending', { body, auth: true });
+  }
+
+  async getPendingOrders(status?: string): Promise<ApiResponse<GetPendingOrdersResponse>> {
+    const query = status !== undefined ? `?status=${encodeURIComponent(status)}` : '';
+    return this.request<GetPendingOrdersResponse>('GET', `/order/pending${query}`, {
+      auth: true,
+    });
   }
 
   async cancelPendingOrder(pendingId: number): Promise<ApiResponse<CancelPendingResponse>> {
@@ -1027,8 +1162,8 @@ export class MoamelatClient {
     return this.request<KycStatusResponse>('GET', '/kyc/status', { auth: true });
   }
 
-  async submitKycStep1(data: KycStep1Data): Promise<ApiResponse<KycResponse>> {
-    return this.request<KycResponse>('POST', '/kyc/step1', { body: data, auth: true });
+  async submitKycStep1(data: KycStep1Data): Promise<ApiResponse<KycStep1Response>> {
+    return this.request<KycStep1Response>('POST', '/kyc/step1', { body: data, auth: true });
   }
 
   async submitKycStep2(data: KycStep2Data): Promise<ApiResponse<KycResponse>> {
@@ -1058,6 +1193,31 @@ export class MoamelatClient {
       body: { id: cardId },
       auth: true,
     });
+  }
+
+  // --- AI Methods ---
+
+  async aiChat(message: string, conversation_id?: number): Promise<ApiResponse<AiChatResponse>> {
+    const body: Record<string, unknown> = { message };
+    if (conversation_id !== undefined) body.conversation_id = conversation_id;
+    return this.request<AiChatResponse>('POST', '/ai/chat', { body, auth: true });
+  }
+
+  async listAiConversations(limit = 20): Promise<ApiResponse<AiConversationsResponse>> {
+    return this.request<AiConversationsResponse>('GET', `/ai/conversations?limit=${limit}`, {
+      auth: true,
+    });
+  }
+
+  async getAiConversationMessages(
+    id: number,
+    limit = 50,
+  ): Promise<ApiResponse<AiMessagesResponse>> {
+    return this.request<AiMessagesResponse>(
+      'GET',
+      `/ai/conversations/${id}/messages?limit=${limit}`,
+      { auth: true },
+    );
   }
 
   // --- Internal Request Methods ---
