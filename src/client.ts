@@ -242,11 +242,10 @@ export interface MarginResponse {
 
 export interface Transaction {
   id: number;
+  trader_id: number;
   type: string;
   amount: number;
-  balance: number;
-  date: number;
-  description: string;
+  time: number;
 }
 
 export interface TransactionsResponse {
@@ -360,20 +359,6 @@ interface ManualDepositData {
   image: string;
 }
 
-// --- Accounting v2: Deposit/Withdraw ---
-
-interface DepositResponse {
-  success: boolean;
-  url?: string;
-  reference?: string;
-  paymentId?: number;
-  link?: string;
-  amount?: number;
-  dollarSell?: string;
-  commission?: number;
-  wage?: number;
-}
-
 export interface WithdrawResponse {
   reference?: string;
   settleId?: number;
@@ -390,7 +375,7 @@ export interface KycStatusResponse {
   status: KycStatus;
   level: string;
   isActive: boolean;
-  pendingLevel: 'step1' | 'step2' | 'step3' | null;
+  pendingLevel: 'step2' | 'step3' | null;
   steps: {
     step1: boolean;
     step2: boolean;
@@ -461,6 +446,22 @@ export interface GetPendingOrdersResponse {
 export interface AiChatResponse {
   text: string;
   conversation_id: number;
+  action_required?: boolean;
+  action?: string | null;
+  action_data?: Record<string, unknown> | null;
+  action_risk_level?: 'normal' | 'high' | null;
+  action_confirm_required?: boolean;
+  action_payload?: Record<string, unknown> | null;
+  client_directive?: {
+    kind?: 'paged_resource' | 'collection_snapshot' | 'capability_suggestions';
+    resource?: string;
+    requested_limit?: number;
+    delivered_limit?: number;
+    delivered_count?: number;
+    call?: { tool?: string; args?: Record<string, unknown> };
+    next_call?: { tool?: string; args?: Record<string, unknown> };
+    suggestions?: string[];
+  } | null;
 }
 
 export interface AiConversation {
@@ -503,9 +504,9 @@ interface EditNicknameResponse {
 
 interface ApiResponse<T = unknown> {
   success: boolean;
+  message: string;
   data: T;
-  message?: string;
-  errors?: Record<string, any>;
+  errors: Record<string, unknown>;
 }
 
 // ==================== Error Class ====================
